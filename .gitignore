@@ -1,0 +1,27 @@
+# System files
+Thumbs.db
+Desktop.ini
+
+# OneDrive sync files
+~$*
+*.lnk
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE files
+.vscode/
+.idea/
+
+# OS-specific
+.DS_Store
+
+# Node or web build outputs (for future projects)
+node_modules/
+dist/
