@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sorting Algorithm Visualizer</title>
+  <style>
+    :root{--bg:#0f1724;--accent:#7dd3fc}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial}
+    body{background:linear-gradient(180deg,#071024 0%, #081326 100%);color:#e6eef6;display:flex;align-items:center;justify-content:center;padding:16px}
+    .app{width:100%;max-width:1100px;background:rgba(255,255,255,0.02);border-radius:12px;padding:18px;box-shadow:0 8px 30px rgba(2,6,23,0.6)}
+    header{display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap}
+    h1{font-size:20px;margin:0;flex:1 1 100%}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    select,input[type=range],button{background:transparent;color:inherit;border:1px solid rgba(255,255,255,0.1);padding:6px 10px;border-radius:8px;cursor:pointer}
+    .row{display:flex;gap:8px;align-items:center}
+    #canvas{height:420px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));border-radius:8px;overflow:hidden;display:flex;align-items:flex-end;padding:12px;margin-bottom:12px}
+    .bar{margin:0 1px;border-radius:3px;transition:height 0.1s ease}
+    #infoBox{background:rgba(255,255,255,0.03);border-radius:8px;padding:14px;font-size:14px;line-height:1.6;color:#cde2f5;text-align:justify;}
+    footer{margin-top:12px;font-size:13px;color:rgba(230,238,246,0.75);text-align:center;}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Sorting Algorithm Visualizer</h1>
+      <div class="controls">
+        <div class="row">
+          <label>Algorithm:</label>
+          <select id="algo">
+            <option>Bubble</option>
+            <option>Insertion</option>
+            <option>Merge</option>
+            <option selected>Quick</option>
+            <option>Heap</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>Size:</label>
+          <input id="size" type="range" min="10" max="160" value="60" />
+          <span id="sizeVal">60</span>
+        </div>
+        <div class="row">
+          <label>Speed:</label>
+          <input id="speed" type="range" min="1" max="1000" value="80" />
+          <span id="speedVal">80 ms</span>
+        </div>
+        <div class="row">
+          <button id="shuffle">Shuffle</button>
+          <button id="start">Start</button>
+          <button id="stop">Stop</button>
+        </div>
+      </div>
+    </header>
+
+    <div id="canvas"></div>
+    <div id="infoBox"></div>
+   <footer>
+  Interactive educational demo — built with HTML, CSS, and JavaScript. <br>
+  © 2025 <b>Vinu Mathew</b>. All rights reserved. <br>
+  <a href="https://github.com/vkmathew" target="_blank" style="color:#7dd3fc;text-decoration:none;">
+    View more projects on GitHub
+  </a>
+</footer>
+  </div>
+
+<script>
+const canvas=document.getElementById('canvas');
+const infoBox=document.getElementById('infoBox');
+const algoSelect=document.getElementById('algo');
+const sizeSlider=document.getElementById('size');
+const sizeVal=document.getElementById('sizeVal');
+const speedSlider=document.getElementById('speed');
+const speedVal=document.getElementById('speedVal');
+const shuffleBtn=document.getElementById('shuffle');
+const startBtn=document.getElementById('start');
+const stopBtn=document.getElementById('stop');
+
+let array=[]; let bars=[]; let running=false; let stopRequested=false;
+
+function randInt(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+function buildArray(n){array=new Array(n).fill(0).map(()=>randInt(5,100));render();}
+function render(){
+  canvas.innerHTML='';bars=[];
+  const w=canvas.clientWidth;const barWidth=Math.max(2,Math.floor(w/array.length)-2);
+  for(let i=0;i<array.length;i++){
+    const b=document.createElement('div');
+    b.className='bar';b.style.width=barWidth+'px';b.style.height=(array[i])+'%';
+    b.style.background='linear-gradient(180deg, rgba(125,211,252,0.95), rgba(125,211,252,0.6))';
+    canvas.appendChild(b);bars.push(b);
+  }
+}
+function setBar(i,v){array[i]=v;bars[i].style.height=(v)+'%';}
+function swap(i,j){[array[i],array[j]]=[array[j],array[i]];[bars[i].style.height,bars[j].style.height]=[bars[j].style.height,bars[i].style.height];}
+async function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+function getDelay(){return Math.max(1,parseInt(speedSlider.value));}
+
+// 🔍 Detailed explanations with Big O context
+const algoInfo={
+  "Bubble":`
+    <h3>🫧 Bubble Sort</h3>
+    Bubble Sort repeatedly compares adjacent elements and swaps them if they are in the wrong order. 
+    Imagine shaking a soda bottle — bubbles (the larger numbers) rise to the top each pass until everything is calm (sorted). 
+    It’s simple and visual but becomes painfully slow as data grows.
+    <br><br>
+    <b>Performance:</b> O(n²) on average and worst case, O(1) space.  
+    <b>Best case:</b> O(n) when data is already sorted.  
+    <b>Big O Explanation:</b> “O(n²)” means that if you double the number of elements, the sorting time roughly quadruples.  
+    Real-world analogy: Imagine checking if a deck of cards is in order by comparing every adjacent pair one by one.  
+    For 10 cards, it’s fine; for 10,000 cards, it’s chaos.  
+    <br><br><b>Use case:</b> Mostly educational — good for demonstrating how sorting works, but rarely used in production.
+  `,
+  "Insertion":`
+    <h3>🪣 Insertion Sort</h3>
+    Insertion Sort sorts items much like you’d organize playing cards in your hand — each new card is inserted into its correct spot among the ones you’ve already arranged.  
+    It’s intuitive and efficient for small or nearly sorted datasets.
+    <br><br>
+    <b>Performance:</b> O(n²) on average and worst case, O(n) best case (already sorted data).  
+    <b>Space:</b> O(1).  
+    <b>Big O Explanation:</b> In the worst case, every new element has to be compared with all the ones before it.  
+    For 1000 elements, that’s roughly a million comparisons — that’s the “squared” effect in O(n²).  
+    <br><br><b>Real-world analogy:</b> Picture placing books on a shelf one at a time in alphabetical order — easy with a few books, but tedious as the shelf fills up.  
+    <b>Use case:</b> Often used inside hybrid algorithms like Python’s Timsort when the data chunk is small.
+  `,
+  "Merge":`
+    <h3>🧩 Merge Sort</h3>
+    Merge Sort uses the divide-and-conquer principle: split the list in half, sort each half, then merge them back in order.  
+    This method guarantees stable and predictable performance even with large datasets.
+    <br><br>
+    <b>Performance:</b> O(n log n) across all cases, using O(n) extra space.  
+    <b>Big O Explanation:</b> The “log n” part comes from how many times you can divide the array before reaching single items — like halving a loaf of bread again and again.  
+    The “n” comes from merging all elements each time.  
+    <br><br><b>Real-world analogy:</b> Sorting a big stack of papers by splitting it into smaller piles, sorting each, and merging them back together.  
+    <b>Use case:</b> Excellent for sorting huge data files or linked lists, and forms the base for Python’s and Java’s built-in sorts.
+  `,
+  "Quick":`
+    <h3>⚡ Quick Sort</h3>
+    Quick Sort selects a pivot value, divides the array so smaller items go left and larger ones go right, then recursively sorts both sides.  
+    It’s efficient and elegant — and the go-to for high-performance sorting.
+    <br><br>
+    <b>Performance:</b> Average O(n log n), worst O(n²), space O(log n).  
+    <b>Big O Explanation:</b> For each recursive level, the array gets smaller (that’s the log n part), and each level processes n items.  
+    In the unlucky case where the pivot is always bad, the divisions don’t help — producing O(n²).  
+    <br><br><b>Real-world analogy:</b> Imagine organizing books by picking one (the pivot) and separating others into “shorter” and “taller” piles.  
+    Keep splitting until every pile is ordered.  
+    <b>Use case:</b> Heavily used in libraries and databases because of excellent cache performance.
+  `,
+  "Heap":`
+    <h3>🏔️ Heap Sort</h3>
+    Heap Sort treats the array as a binary tree called a “heap,” where each parent is larger than its children (a max heap).  
+    It repeatedly removes the largest element (the root) and rebuilds the heap until all elements are sorted.
+    <br><br>
+    <b>Performance:</b> O(n log n) in all cases, with O(1) extra space.  
+    <b>Big O Explanation:</b> Building the heap takes O(n), and each of n removals requires O(log n) time — the height of the tree.  
+    “Log n” simply means the number of times you can halve the structure before reaching the root.  
+    <br><br><b>Real-world analogy:</b> Picture a tournament bracket: the top seed (largest element) wins and is removed, and the next best emerges from the remaining players.  
+    <b>Use case:</b> Ideal when you need consistent speed and limited memory, such as embedded systems or priority queues.
+  `
+};
+
+function updateInfo(){infoBox.innerHTML=algoInfo[algoSelect.value];}
+
+// Sorting logic (same as before)
+async function bubbleSort(){const n=array.length;for(let i=0;i<n-1;i++){for(let j=0;j<n-1-i;j++){if(stopRequested)return;if(array[j]>array[j+1])swap(j,j+1);await sleep(getDelay());}}}
+async function insertionSort(){for(let i=1;i<array.length;i++){if(stopRequested)return;let key=array[i];let j=i-1;while(j>=0&&array[j]>key){setBar(j+1,array[j]);j--;await sleep(getDelay());}setBar(j+1,key);}}
+async function mergeSortWrapper(){await mergeSort(0,array.length-1);}
+async function mergeSort(l,r){if(l>=r||stopRequested)return;const m=Math.floor((l+r)/2);await mergeSort(l,m);await mergeSort(m+1,r);const temp=[];let i=l,j=m+1;while(i<=m&&j<=r){if(array[i]<=array[j])temp.push(array[i++]);else temp.push(array[j++]);await sleep(getDelay());}while(i<=m)temp.push(array[i++]);while(j<=r)temp.push(array[j++]);for(let k=0;k<temp.length;k++){setBar(l+k,temp[k]);await sleep(getDelay());}}
+async function quickSortWrapper(){await quickSort(0,array.length-1);}
+async function quickSort(low,high){if(low<high&&!stopRequested){const p=await partition(low,high);await quickSort(low,p-1);await quickSort(p+1,high);}}
+async function partition(low,high){const pivot=array[high];let i=low;for(let j=low;j<high;j++){if(stopRequested)return high;if(array[j]<pivot){swap(i,j);i++;}await sleep(getDelay());}swap(i,high);return i;}
+async function heapSort(){const n=array.length;for(let i=Math.floor(n/2)-1;i>=0;i--){await heapify(n,i);}for(let i=n-1;i>0;i--){swap(0,i);await sleep(getDelay());await heapify(i,0);}}
+async function heapify(n,i){let largest=i,l=2*i+1,r=2*i+2;if(l<n&&array[l]>array[largest])largest=l;if(r<n&&array[r]>array[largest])largest=r;if(largest!=i){swap(i,largest);await heapify(n,largest);}}
+async function runAlgorithm(){running=true;stopRequested=false;const algo=algoSelect.value;if(algo==='Bubble')await bubbleSort();else if(algo==='Insertion')await insertionSort();else if(algo==='Merge')await mergeSortWrapper();else if(algo==='Quick')await quickSortWrapper();else if(algo==='Heap')await heapSort();running=false;}
+
+sizeSlider.oninput=()=>{sizeVal.textContent=sizeSlider.value;buildArray(+sizeSlider.value);}
+speedSlider.oninput=()=>{speedVal.textContent=speedSlider.value+' ms';}
+shuffleBtn.onclick=()=>buildArray(+sizeSlider.value);
+startBtn.onclick=()=>{if(!running)runAlgorithm();}
+stopBtn.onclick=()=>{stopRequested=true;}
+algoSelect.onchange=updateInfo;
+
+window.onload=()=>{buildArray(+sizeSlider.value);updateInfo();speedVal.textContent=speedSlider.value+' ms';sizeVal.textContent=sizeSlider.value;}
+window.onresize=()=>render();
+</script>
+</body>
+</html>
